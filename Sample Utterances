@@ -1,6 +1,18 @@
 getRank what is the rank data for {currencyName}
+getRank get me the rank for {currencyName}
+getRank give me the rank for {currencyName}
+getRank what is the rank of {currencyName}
 getPriceUSD what is the price of {usdPrice}
+getPriceUSD what's the price of {usdPrice}
+getPriceUSD what's the price for {usdPrice}
+getPriceUSD price of {usdPrice}
+getPriceUSD price for {usdPrice}
 getMarketCap what is the marketcap for {marketcap}
+getMarketCap get me the marketcap for {marketcap}
+getMarketCap marketcap for {marketcap}
+getMarketCap marketcap of {marketcap}
+getMarketCap marketcap {marketcap}
+
 getTwentyFourhrVolume what is the twenty four hour volume for {volumeTwentyFour}
 getSevenDayPercentChange what is the seven day percent change of {sevenDayPercentChange}
 getSymbol what is the symbol for {symbol}
