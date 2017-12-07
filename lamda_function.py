@@ -1,8 +1,8 @@
-
 from __future__ import print_function
+from urllib2 import Request, urlopen, URLError
+import json
 
 
-    
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
@@ -36,6 +36,21 @@ def build_response(session_attributes, speechlet_response):
 
 # --------------- Functions that control the skill's behavior ------------------
 
+# function to  return number in ordinal format by adding st, nd, rd, and th to numbers
+def ord(n):
+    return str(n)+("th" if 4<=n%100<=20 else {1:"st",2:"nd",3:"rd"}.get(n%10, "th"))
+
+def Coin(name):
+    request = Request('https://api.coinmarketcap.com/v1/ticker/' + name)
+    try:
+        response = urlopen(request)
+        data = json.load(response)
+        return data
+
+    except URLError, e:
+        return
+
+
 # change the numbers inputted to text
 def numberToWords(num):
     to19 = 'One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve ' \
@@ -52,21 +67,18 @@ def numberToWords(num):
             if n < 1000**(p+1):
                 return words(n/1000**p) + [w] + words(n%1000**p)
     return ' '.join(words(num)) or 'Zero'
-    
+
+
 def get_welcome_response():
-    """ If we wanted to initialize the session to have some attributes we could
-    add those here
-    """
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to my Crypto-currency app . " \
-                    "There are many functions in this app, for example, please tell me your the cryptocurrency coin you want to search up by saying, " \
-                    "what is the price of and the coin you want"
+    speech_output = "Welcome to my cryptocurrency app. "
+
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Please try again, " \
-                    "Please try again."
+    reprompt_text = "I didn't get that, please try again"
+
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -74,47 +86,49 @@ def get_welcome_response():
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Alexa Skills Kit sample. " \
-                    "Have a nice day! "
+    speech_output = "Thank you for trying out my app. " \
+                    "Bye!"
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
 
-def create_favorite_color_attributes(favorite_color):
-    return {"favoriteColor": favorite_color}
+def create_current_currency_attributes(current_currency):
+    return {"currentCurrency": current_currency}
 
+def rank(data):
+    currency = data
+    data = Coin(data)[0]
+    return str(currency + " is currently the "+ord(int(data["rank"])) + " ranked currency on the market.")
 
 def set_rank_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
-    user.
-    """
 
     card_title = intent['name']
     session_attributes = {}
     should_end_session = False
-    
-    
 
     if 'currencyName' in intent['slots']:
-        favorite_color = intent['slots']['currencyName']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "hellooooo"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['currencyName']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = rank(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me about any coins by stating your questoin and the coin followed after it. "
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 
+
+def price_usd(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The price of "+currency + " in US dollars is "+ numberToWords(int(data["price_usd"].split(".")[0])) + " dollars."
 def set_priceUSD_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -123,21 +137,26 @@ def set_priceUSD_in_session(intent, session):
     should_end_session = False
 
     if 'usdPrice' in intent['slots']:
-        favorite_color = intent['slots']['usdPrice']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "The price of bitcoin in US dollars is Fourteen Thousand Three Hundred Eighty Six dollars."
-        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
+        current_currency = intent['slots']['usdPrice']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = price_usd(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can also ask me for volume, marketcap, and percent change, by saying" \
+                        "what is the marketcap for and the coin you want?"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-        
+
+
+def market_cap_usd(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The market cap for "+currency+" is "+ numberToWords(int(data["24h_volume_usd"].split(".")[0]))+ " dollars."
 def set_MarketCap_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -146,24 +165,26 @@ def set_MarketCap_in_session(intent, session):
     should_end_session = False
 
     if 'marketcap' in intent['slots']:
-        favorite_color = intent['slots']['marketcap']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "The market cap for ethereum is Two Billion Fifty Seven Million Six Hundred Thousand dollars."
-        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc" \
-                        ""
+        current_currency = intent['slots']['marketcap']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = market_cap_usd(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 
+def h24_volume_usd(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The market 24 hour volume of "+currency+" is "+ numberToWords(int(data["24h_volume_usd"].split(".")[0]))+ " dollars."
 
 def set_24hrVolume_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -172,25 +193,26 @@ def set_24hrVolume_in_session(intent, session):
     should_end_session = False
 
     if 'volumeTwentyFour' in intent['slots']:
-        favorite_color = intent['slots']['volumeTwentyFour']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['volumeTwentyFour']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = set_24hrVolume_in_session(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-        
+
+
+def percent_change_7d(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The seven day percent change for "+currency+" is "+ data["percent_change_7d"] + " percent."
+
 def set_7DayPercentChange_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -199,26 +221,27 @@ def set_7DayPercentChange_in_session(intent, session):
     should_end_session = False
 
     if 'sevenDayPercentChange' in intent['slots']:
-        favorite_color = intent['slots']['sevenDayPercentChange']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['sevenDayPercentChange']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = set_7DayPercentChange_in_session(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-        
-        
+
+
+def symbol(data):
+    currency = data
+    data = Coin(data)[0]
+    symbol = list(data["symbol"])
+    return "The symbol of "+currency+" is "+" ".join(symbol)
+
 def set_Symbol_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -227,25 +250,25 @@ def set_Symbol_in_session(intent, session):
     should_end_session = False
 
     if 'symbol' in intent['slots']:
-        favorite_color = intent['slots']['symbol']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['symbol']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = set_Symbol_in_session(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+def max_supply(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The max supply of "+currency+" is "+ numberToWords(int(data["max_supply"].split(".")[0]))+ " dollars."
+
 def set_maxSupply_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -254,25 +277,25 @@ def set_maxSupply_in_session(intent, session):
     should_end_session = False
 
     if 'maxSupply' in intent['slots']:
-        favorite_color = intent['slots']['maxSupply']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['maxSupply']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = max_supply(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+def percent_change_1h(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The one hour percent change for "+currency+" is "+data["percent_change_1h"]\
+           + " percent."
 def set_oneHRPercentChange_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -281,25 +304,26 @@ def set_oneHRPercentChange_in_session(intent, session):
     should_end_session = False
 
     if 'oneHRPercentChange' in intent['slots']:
-        favorite_color = intent['slots']['oneHRPercentChange']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['oneHRPercentChange']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = percent_change_1h(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+
+def total_supply(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The total supply of "+currency+" is "+numberToWords(int(data["total_supply"].split(".")[0])) \
+           +" coins."
 def set_totalSupply_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -308,26 +332,26 @@ def set_totalSupply_in_session(intent, session):
     should_end_session = False
 
     if 'totalSupply' in intent['slots']:
-        favorite_color = intent['slots']['totalSupply']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['totalSupply']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = total_supply(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-    
 
+
+def available_supply(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The total supply of "+currency+" in the market is "+numberToWords(int(data["available_supply"].split(".")[0])) \
+           +" coins."
 def set_AvailableSupply_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -336,26 +360,25 @@ def set_AvailableSupply_in_session(intent, session):
     should_end_session = False
 
     if 'availableSupply' in intent['slots']:
-        favorite_color = intent['slots']['availableSupply']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['availableSupply']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = available_supply(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+def percent_change_24h(data):
+    currency = data
+    data = Coin(data)[0]
+    return "The twenty four hour percent change for "+currency+" is "+data["percent_change_24h"] + " percent."
 
 def set_24HRpercentChange_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
+    """ Sets the current_currency in the session and prepares the speech to reply to the
     user.
     """
 
@@ -364,36 +387,31 @@ def set_24HRpercentChange_in_session(intent, session):
     should_end_session = False
 
     if 'percentChangeTwentyFourhr' in intent['slots']:
-        favorite_color = intent['slots']['percentChangeTwentyFourhr']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        current_currency = intent['slots']['percentChangeTwentyFourhr']['value']
+        session_attributes = create_current_currency_attributes(current_currency)
+        output = percent_change_24h(current_currency)
+        speech_output = output+ " "
+        reprompt_text = "You can ask me other questions about volume, percent change, max supply, etc"
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
+        reprompt_text = "I did't get that. "
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 
-def get_color_from_session(intent, session):
+def get_currency_from_session(intent, session):
     session_attributes = {}
     reprompt_text = None
 
-    if session.get('attributes', {}) and "favoriteColor" in session.get('attributes', {}):
-        favorite_color = session['attributes']['favoriteColor']
-        speech_output = "Your favorite color is " + favorite_color + \
+    if session.get('attributes', {}) and "currentCurrency" in session.get('attributes', {}):
+        current_currency = session['attributes']['currentCurrency']
+        speech_output = "The current currency is " + current_currency + \
                         ". Goodbye."
         should_end_session = True
     else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "You can say, my favorite color is red."
+        speech_output = "I did't get that. " \
+                        "Please try again.   "
         should_end_session = False
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
@@ -433,32 +451,34 @@ def on_intent(intent_request, session):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
-    if intent_name == "getPriceUSD":
+
+    if intent_name == "WhatsMyCurrencyIntent":
+        return get_currency_from_session(intent, session)
+
+
+    elif intent_name == "getPriceUSD":
         return set_priceUSD_in_session(intent, session)
     elif intent_name == "getRank":
         return set_rank_in_session(intent, session)
     elif intent_name == "getMarketCap":
-        return set_MarketCap_in_session(intent, session)            
+        return set_MarketCap_in_session(intent, session)
     elif intent_name == "getTwentyFourhrVolume":
-        return set_24hrVolume_in_session(intent, session)          
+        return set_24hrVolume_in_session(intent, session)
     elif intent_name == "getSevenDayPercentChange":
-        return set_7DayPercentChange_in_session(intent, session)     
+        return set_7DayPercentChange_in_session(intent, session)
     elif intent_name == "getSymbol":
-        return set_Symbol_in_session(intent, session) 
+        return set_Symbol_in_session(intent, session)
     elif intent_name == "getMaxSupply":
-        return set_maxSupply_in_session(intent, session) 
+        return set_maxSupply_in_session(intent, session)
     elif intent_name == "getOnehrPercentChange":
-        return set_oneHRPercentChange_in_session(intent, session) 
+        return set_oneHRPercentChange_in_session(intent, session)
     elif intent_name == "getTotalSupply":
         return set_totalSupply_in_session(intent, session)
     elif intent_name == "getAvailableSupply":
         return set_AvailableSupply_in_session(intent, session)
     elif intent_name == "getTwentyFourHRpercentChange":
         return set_24HRpercentChange_in_session(intent, session)
-        
 
-    elif intent_name == "WhatsMyColorIntent":
-        return get_color_from_session(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
