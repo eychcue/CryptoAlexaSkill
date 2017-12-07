@@ -1,0 +1,11 @@
+getPriceUSD what is the price of {usdPrice}
+getRank get rank data for {currencyName}
+getMarketCap what is the marketcap for {marketcap}
+getTwentyFourhrVolume what is the twenty four hour volume for {volumeTwentyFour}
+getSevenDayPercentChange what is the seven day percent change of {sevenDayPercentChange}
+getSymbol what is the symbol for {symbol}
+getMaxSupply what is the max supply of {maxSupply}
+getOnehrPercentChange what is the one hour percent change for {oneHRPercentChange}
+getTotalSupply what is the total supply for {totalSupply}
+getAvailableSupply what is the available supply for {availableSupply}
+getTwentyFourHRpercentChange what is the twenty four hour percent change for {percentChangeTwentyFourhr}
