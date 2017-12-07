@@ -1,0 +1,115 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "currencyName",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getRank"
+    },
+    {
+      "slots": [
+        {
+          "name": "usdPrice",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getPriceUSD"
+    },
+    {
+      "slots": [
+        {
+          "name": "marketcap",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getMarketCap"
+    },
+    {
+      "slots": [
+        {
+          "name": "volumeTwentyFour",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getTwentyFourhrVolume"
+    },
+    {
+      "slots": [
+        {
+          "name": "sevenDayPercentChange",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getSevenDayPercentChange"
+    },
+    {
+      "slots": [
+        {
+          "name": "symbol",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getSymbol"
+    },
+    {
+      "slots": [
+        {
+          "name": "maxSupply",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getMaxSupply"
+    },
+    {
+      "slots": [
+        {
+          "name": "oneHRPercentChange",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getOnehrPercentChange"
+    },
+    {
+      "slots": [
+        {
+          "name": "totalSupply",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getTotalSupply"
+    },
+    {
+      "slots": [
+        {
+          "name": "availableSupply",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getAvailableSupply"
+    },
+    {
+      "slots": [
+        {
+          "name": "percentChangeTwentyFourhr",
+          "type": "LIST_OF_CURRENCIES"
+        }
+      ],
+      "intent": "getTwentyFourHRpercentChange"
+    },
+    {
+      "intent": "WhatsMyColorIntent"
+    }
+  ]
+}
