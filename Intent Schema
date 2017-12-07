@@ -107,9 +107,6 @@
         }
       ],
       "intent": "getTwentyFourHRpercentChange"
-    },
-    {
-      "intent": "WhatsMyColorIntent"
     }
   ]
 }
