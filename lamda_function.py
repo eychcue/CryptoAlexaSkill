@@ -73,7 +73,7 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to my cryptocurrency app. "
+    speech_output = "Welcome to my cryptocurrency app. Start off by saying a command like: what is the marketcap of bitcoin"
 
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
